@@ -60,7 +60,7 @@ int keyboard_player_next(void)
     
     Serial.println("Play Next Media...");
     #if BLE_KEYWORD
-    bleKeyboard.write(KEY_PAGE_DOWN);
+    bleKeyboard.write(KEY_MEDIA_NEXT_TRACK);
     delay(50);
     #endif
     return 0;
@@ -73,7 +73,7 @@ int keyboard_player_previous(void)
     
     Serial.println("Play Previous Media...");
     #if BLE_KEYWORD
-    bleKeyboard.write(KEY_PAGE_UP);
+    bleKeyboard.write(KEY_MEDIA_PREVIOUS_TRACK);
     delay(50);
     #endif
     return 0;
@@ -122,7 +122,7 @@ int keyboard_next_page(void)
     
     Serial.println("Next Page...");
     #if BLE_KEYWORD
-    bleKeyboard.write(KEY_DOWN_ARROW);
+    bleKeyboard.write(KEY_PAGE_DOWN);
     #endif
     return 0;
 }
@@ -134,7 +134,7 @@ int keyboard_previous_page(void)
     
     Serial.println("Previous Page...");
     #if BLE_KEYWORD
-    bleKeyboard.write(KEY_UP_ARROW);
+    bleKeyboard.write(KEY_PAGE_UP);
     #endif
     return 0;
 }
