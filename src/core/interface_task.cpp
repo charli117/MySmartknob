@@ -170,6 +170,17 @@ static KnobConfig configs[] = {
         "Page&PPT\nUp/Down",
     },
     {
+        0,
+        0,
+        10 * PI / 180,
+        0,
+        1,
+        1.1,
+        11,
+        15,
+        "Zoom\nUp/Down",
+    },
+    {
         2,
         0,
         60 * PI / 180,
@@ -255,14 +266,14 @@ void InterfaceTask::run() {
             lux_avg = lux * LUX_ALPHA + lux_avg * (1 - LUX_ALPHA);
             static uint32_t last_als;
             if (millis() - last_als > 1000) {
-                // Serial.print("millilux: "); Serial.println(lux*1000);
+                Serial.println(String("millilux: ") + lux*1000);
                 last_als = millis();
             }
         #endif
 
         #if SK_STRAIN
             // TODO: calibrate and track (long term moving average) zero point (lower); allow calibration of set point offset
-            const int32_t lower = -100000;
+            const int32_t lower = 300000;
             const int32_t upper = 900000;
             uint8_t volume_cnt=50;
             if (scale.wait_ready_timeout(100)) {
@@ -272,7 +283,7 @@ void InterfaceTask::run() {
                 if (reading >= lower - (upper - lower) && reading < upper + (upper - lower)*2) {
                     static uint32_t last_reading_display;
                     if (millis() - last_reading_display > 1000) {
-                        // Serial.print("HX711 reading: "); Serial.println(reading);
+                        Serial.println(String("HX711 reading: ") + reading);
                         last_reading_display = millis();
                     }
                     long value = CLAMP(reading, lower, upper);
@@ -376,10 +387,23 @@ void InterfaceTask::run() {
                 now_play_num = motor_task_.getPosition();
                 if (now_play_num != old_play_num)
                 {
-                    keyboard_enable_qq_player();
+                    keyboard_enable_qq_music();
                     old_play_num = motor_task_.getPosition();
                 } 
                 // Serial.println(String("Position: ") + now_play_num + String("_") + old_play_num); 
+            } else if(device_type_ == 11 && device_operate_ == 15) {
+                static int now_zoom_num = 0;
+                static int old_zoom_num = 0;
+                now_zoom_num = motor_task_.getPosition();
+                if (now_zoom_num > old_zoom_num)
+                {
+                    keyboard_zoom_up();
+                    old_zoom_num = motor_task_.getPosition();
+                } else if (now_zoom_num < old_zoom_num) {
+                    keyboard_zoom_down();
+                    old_zoom_num = motor_task_.getPosition();
+                }
+                // Serial.println(String("Position: ")  + now_zoom_num + String("_") + old_zoom_num);
             }
         #endif
         

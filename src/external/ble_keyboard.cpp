@@ -36,7 +36,7 @@ int keyboard_enable_player(void)
     return 0;
 }
 
-int keyboard_enable_qq_player(void)
+int keyboard_enable_qq_music(void)
 {
     if(!check_keyboard_connected())
     return -1;
@@ -60,7 +60,7 @@ int keyboard_player_next(void)
     
     Serial.println("Play Next Media...");
     #if BLE_KEYWORD
-    bleKeyboard.write(KEY_MEDIA_NEXT_TRACK);
+    bleKeyboard.write(KEY_PAGE_DOWN);
     delay(50);
     #endif
     return 0;
@@ -73,7 +73,7 @@ int keyboard_player_previous(void)
     
     Serial.println("Play Previous Media...");
     #if BLE_KEYWORD
-    bleKeyboard.write(KEY_MEDIA_PREVIOUS_TRACK);
+    bleKeyboard.write(KEY_PAGE_UP);
     delay(50);
     #endif
     return 0;
@@ -122,7 +122,7 @@ int keyboard_next_page(void)
     
     Serial.println("Next Page...");
     #if BLE_KEYWORD
-    bleKeyboard.write(KEY_PAGE_DOWN);
+    bleKeyboard.write(KEY_DOWN_ARROW);
     #endif
     return 0;
 }
@@ -134,7 +134,35 @@ int keyboard_previous_page(void)
     
     Serial.println("Previous Page...");
     #if BLE_KEYWORD
-    bleKeyboard.write(KEY_PAGE_UP);
+    bleKeyboard.write(KEY_UP_ARROW);
+    #endif
+    return 0;
+}
+
+int keyboard_zoom_up(void)
+{
+    if(!check_keyboard_connected())
+    return -1;
+    
+    Serial.println("Zoom Up...");
+    #if BLE_KEYWORD
+    bleKeyboard.press(KEY_LEFT_GUI);
+    bleKeyboard.print("+");
+    bleKeyboard.releaseAll();
+    #endif
+    return 0;
+}
+
+int keyboard_zoom_down(void)
+{
+    if(!check_keyboard_connected())
+    return -1;
+    
+    Serial.println("Zoom Down...");
+    #if BLE_KEYWORD
+    bleKeyboard.press(KEY_LEFT_GUI);
+    bleKeyboard.print("-");
+    bleKeyboard.releaseAll();
     #endif
     return 0;
 }
@@ -143,7 +171,6 @@ int keyboard_previous_page(void)
 // {
 //     if(!check_keyboard_connected())
 //     return -1;
-    
 //     Serial.println("Sending ctrl + c");
 //     #if BLE_KEYWORD
 //     bleKeyboard.press(KEY_LEFT_CTRL);
@@ -173,7 +200,6 @@ int keyboard_previous_page(void)
 // {
 //     if(!check_keyboard_connected())
 //     return -1;
-    
 //     Serial.println("Sending ctrl + v");
 //     #if BLE_KEYWORD
 //     bleKeyboard.press(KEY_LEFT_GUI);
