@@ -167,34 +167,6 @@ int keyboard_zoom_down(void)
     return 0;
 }
 
-// int keyboard_pass_ctrl_c(void)
-// {
-//     if(!check_keyboard_connected())
-//     return -1;
-//     Serial.println("Sending ctrl + c");
-//     #if BLE_KEYWORD
-//     bleKeyboard.press(KEY_LEFT_CTRL);
-//     bleKeyboard.press(67);
-//     delay(50);
-//     bleKeyboard.releaseAll();
-//     #endif
-//     return 0;
-// }
-
-// int keyboard_pass_ctrl_v(void)
-// {
-//     if(!check_keyboard_connected())
-//     return -1;
-    
-//     Serial.println("Sending ctrl + v");
-//     #if BLE_KEYWORD
-//     bleKeyboard.press(KEY_LEFT_CTRL);
-//     bleKeyboard.press(86);
-//     delay(50);
-//     bleKeyboard.releaseAll();
-//     #endif
-//     return 0;
-// }
 
 // int keyboard_windows_show(void)
 // {

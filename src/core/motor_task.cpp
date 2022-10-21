@@ -6,10 +6,6 @@
 #include "external/mt6701_sensor.h"
 #endif
 
-#if SENSOR_TLV
-#include "external/tlv_sensor.h"
-#endif
-
 #include "util.h"
 
 
@@ -45,9 +41,7 @@ MotorTask::MotorTask(const uint8_t task_core) : Task("Motor", 2048, 1, task_core
 MotorTask::~MotorTask() {}
 
 
-#if SENSOR_TLV
-    TlvSensor encoder = TlvSensor();
-#elif SENSOR_MT6701
+#if SENSOR_MT6701
     MT6701Sensor encoder = MT6701Sensor();
 #endif
 
@@ -74,10 +68,6 @@ void MotorTask::run() {
 
     driver.voltage_power_supply = 5;
     driver.init();
-
-    #if SENSOR_TLV
-    encoder.init(Wire, false);
-    #endif
 
     #if SENSOR_MT6701
     encoder.init();
@@ -142,6 +132,7 @@ void MotorTask::run() {
     uint32_t last_idle_start = 0;
     uint32_t last_publish = 0;
 
+    // 主循环,检查请求更改它应该处于哪种触觉模式或是否应该播放触觉“点击”的消息，否则根据当前位置和触觉配置计算电机扭矩
     while (1) {
         motor.loopFOC();
 
@@ -301,6 +292,8 @@ void MotorTask::calibrate() {
     // it seems to have a bug (or I've misconfigured it) that gets both the offset and direction very wrong!
     // So this value is based on experimentation.
     // TODO: dig into SimpleFOC calibration and find/fix the issue
+    // 检查请求更改它应该处于哪种触觉模式或是否应该播放触觉“点击”的消息，否则根据当前位置和触觉配置计算电机扭矩
+    
 
     Serial.println("\n\n\nStarting calibration, please do not touch to motor until complete!");
 
