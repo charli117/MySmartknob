@@ -165,7 +165,7 @@ static KnobConfig configs[] = {
     {
         2,
         0,
-        80 * PI / 180,
+        60 * PI / 180,
         1,
         1,
         0.55,

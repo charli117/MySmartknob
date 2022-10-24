@@ -85,7 +85,7 @@ void DisplayTask::run() {
 
     // 开机图片定义
     tft_.setSwapBytes(true);
-    tft_.pushImage(32,82,177,76,(uint16_t *)gImage_cvte);
+    tft_.pushImage(20,82,200,76,(uint16_t *)gImage_cvte);
 
     ledcSetup(LEDC_CHANNEL_LCD_BACKLIGHT, 5000, 16);
     ledcAttachPin(PIN_LCD_BACKLIGHT, LEDC_CHANNEL_LCD_BACKLIGHT);
