@@ -195,5 +195,7 @@ const GFXglyph Roboto_Light_60Glyphs[] PROGMEM = {
 	  { 11711,   4,  51,  14,    5,  -43 }, // '|'
 	  { 11737,  19,  59,  21,    0,  -47 } // '}'
 };
+
 const GFXfont Roboto_Light_60 PROGMEM = {
 (uint8_t  *)Roboto_Light_60Bitmaps,(GFXglyph *)Roboto_Light_60Glyphs,0x20, 0x7E, 71};
+

@@ -16,6 +16,10 @@
 #include "external/ble_keyboard.h"
 #endif 
 
+// #if MFACODE
+// #include "external/mfa_oath.h"
+// #endif 
+
 #include "interface_task.h"
 #include "util.h"
 
@@ -60,17 +64,6 @@ static KnobConfig configs[] = {
     //     "Multi-rev\nNo detents",
     // },
     // {
-    //     11,
-    //     0,
-    //     10 * PI / 180,
-    //     0,
-    //     1,
-    //     1.1,
-    //     10,
-    //     10,
-    //     "Bounded 0-10\nNo detents",
-    // },
-    // {
     //     2,
     //     0,
     //     60 * PI / 180,
@@ -80,17 +73,6 @@ static KnobConfig configs[] = {
     //     10,
     //     10,
     //     "On/off\nStrong detent",
-    // },
-    // {
-    //     1,
-    //     0,
-    //     60 * PI / 180,
-    //     0.01,
-    //     0.6,
-    //     1.1,
-    //     10,
-    //     10,
-    //     "Return-To-Center",
     // },
     // {
     //     256,
@@ -118,17 +100,6 @@ static KnobConfig configs[] = {
     //     32,
     //     0,
     //     8.225806452 * PI / 180,
-    //     2,
-    //     1,
-    //     1.1,
-    //     10,
-    //     10,
-    //     "Coarse Values\nStrong Detents",
-    // },
-    // {
-    //     32,
-    //     0,
-    //     8.225806452 * PI / 180,
     //     0.2,
     //     1,
     //     1.1,
@@ -136,16 +107,27 @@ static KnobConfig configs[] = {
     //     10,
     //     "Coarse Values\nWeak Detents",
     // },
+    // {
+    //     32,
+    //     0,
+    //     8.225806452 * PI / 180,
+    //     2,
+    //     1,
+    //     1.1,
+    //     10,
+    //     10,
+    //     "Coarse Values\nStrong Detents",
+    // },
     {
-        0,
-        0,
-        10 * PI / 180,
+        256,
+        127,
+        1 * PI / 180,
         0.6,
         1,
         1.1,
         11,
         11,
-        "Volume\nUp/Down",
+        "系统音量\n增大/减小",
     },
     {
         0,
@@ -156,7 +138,7 @@ static KnobConfig configs[] = {
         1.1,
         11,
         14,
-        "Media Player\nNext/Previous",
+        "媒体切换\n上一首/下一首",
     },
     {
         0,
@@ -167,7 +149,7 @@ static KnobConfig configs[] = {
         1.1,
         11,
         12,
-        "Page&PPT\nUp/Down",
+        "网页&PPT\n上一页/下一页",
     },
     {
         0,
@@ -178,18 +160,40 @@ static KnobConfig configs[] = {
         1.1,
         11,
         15,
-        "Zoom\nUp/Down",
+        "缩放\n放大/缩小",
     },
     {
         2,
         0,
-        60 * PI / 180,
+        80 * PI / 180,
         1,
         1,
         0.55,
         11,
         13,
-        "QQ Player\nPlay/Pause",
+        "QQ音乐\n播放/暂停",
+    },
+    {
+        1,
+        0,
+        10 * PI / 180,
+        0.01,
+        0.6,
+        1.1,
+        10,
+        10,
+        "Return-To-Center",
+    },
+    {
+        21,
+        0,
+        10 * PI / 180,
+        3,
+        1,
+        1.1,
+        10,
+        10,
+        "Bounded 0-20\nStrong Detents",
     },
 };
 
@@ -228,6 +232,7 @@ void InterfaceTask::run() {
         Wire.begin(PIN_SDA, PIN_SCL);
         Wire.setClock(400000);
     #endif
+    
     #if SK_STRAIN
         scale.begin(38, 2);
     #endif
@@ -290,7 +295,7 @@ void InterfaceTask::run() {
                     press_value_unit = 1. * (value - lower) / (upper - lower);
 
                     static bool pressed;
-                    if (!pressed && press_value_unit > 0.55) {
+                    if (!pressed && press_value_unit > 0.75) {
                         motor_task_.playHaptic(true);
                         pressed = true;
                         changeConfig(true);
@@ -332,6 +337,14 @@ void InterfaceTask::run() {
             }
             FastLED.show();
         #endif
+
+        // #if MFACODE
+        // uint8_t hmacKey[] = {0x4d, 0x79, 0x4c, 0x65, 0x67, 0x6f, 0x44, 0x6f, 0x6f, 0x72};
+        // TOTP totp = TOTP(hmacKey, 10);
+        // long GMT = rtc.getTimestamp();
+        // int totpCode = totp.getCode(GMT);
+        // Serial.println(String("Code: ")  + totpCode);
+        // #endif
 
         #if BLE_KEYWORD
             int device_type_ = motor_task_.getDeviceType();

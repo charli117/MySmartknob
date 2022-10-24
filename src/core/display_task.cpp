@@ -2,6 +2,7 @@
 #include "core/display_task.h"
 #include "core/semaphore_guard.h"
 #include "font/roboto_light_60.h"
+#include "font/chinese.h"
 
 static const uint8_t LEDC_CHANNEL_LCD_BACKLIGHT = 0;
 
@@ -77,9 +78,14 @@ static void HSV_to_RGB(float h, float s, float v, uint8_t *r, uint8_t *g, uint8_
 
 void DisplayTask::run() {
     tft_.begin();
+    tft_.fillScreen(TFT_WHITE);
     tft_.invertDisplay(1);
     tft_.setRotation(0);
-    tft_.fillScreen(TFT_DARKGREEN);
+    // tft_.fillScreen(TFT_DARKGREEN);
+
+    // 开机图片定义
+    tft_.setSwapBytes(true);
+    tft_.pushImage(32,82,177,76,(uint16_t *)gImage_cvte);
 
     ledcSetup(LEDC_CHANNEL_LCD_BACKLIGHT, 5000, 16);
     ledcAttachPin(PIN_LCD_BACKLIGHT, LEDC_CHANNEL_LCD_BACKLIGHT);
@@ -92,7 +98,8 @@ void DisplayTask::run() {
       tft_.fillScreen(TFT_RED);
     } else {
       Serial.println("Sprite created!");
-      tft_.fillScreen(TFT_PURPLE);
+      // 开机紫屏
+      // tft_.fillScreen(TFT_PURPLE);
     }
     spr_.setTextColor(0xFFFF, TFT_BLACK);
     
@@ -120,10 +127,12 @@ void DisplayTask::run() {
           spr_.fillRect(0, TFT_HEIGHT - height, TFT_WIDTH, height, FILL_COLOR);
         }
 
-        spr_.setFreeFont(&Roboto_Light_60);
-        spr_.drawString(String() + state.current_position, TFT_WIDTH / 2, TFT_HEIGHT / 2 - VALUE_OFFSET, 1);
-        spr_.setFreeFont(&DESCRIPTION_FONT);
-        int32_t line_y = TFT_HEIGHT / 2 + DESCRIPTION_Y_OFFSET;
+        // spr_.setFreeFont(&Roboto_Light_60);
+        // spr_.drawString(String() + state.current_position, TFT_WIDTH / 2, TFT_HEIGHT / 2 - VALUE_OFFSET, 1);
+        // spr_.setFreeFont(&DESCRIPTION_FONT);
+        // int32_t line_y = TFT_HEIGHT / 2 + DESCRIPTION_Y_OFFSET;
+        spr_.loadFont(hanz30);
+        int32_t line_y = TFT_HEIGHT / 2 - 10;
         char* start = state.config.descriptor;
         char* end = start + strlen(state.config.descriptor);
         while (start < end) {
