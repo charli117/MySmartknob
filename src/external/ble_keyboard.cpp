@@ -2,14 +2,17 @@
 #include <BleKeyboard.h>
 #include "external/ble_keyboard.h"
 
-BleKeyboard bleKeyboard("Charlie's Knob","luowei",100);
+
+BleKeyboard bleKeyboard("Charlie's Knob","luowei",88);
+
+Logger* logger_;
 
 void ble_keyboard_init(void)
 {
     #if BLE_KEYWORD
     // 初始化虚拟蓝牙键盘
     bleKeyboard.begin();
-    Serial.println("Starting BLE work!");
+    log("Starting BLE work!");
     #endif
 
 }
@@ -28,7 +31,7 @@ int keyboard_enable_player(void)
     if(!check_keyboard_connected())
     return -1;
     
-    Serial.println("Play/Pause Media...");
+    log("Play/Pause Media...");
     #if BLE_KEYWORD
     bleKeyboard.write(KEY_MEDIA_PLAY_PAUSE);
     delay(500);
@@ -41,7 +44,7 @@ int keyboard_enable_qq_music(void)
     if(!check_keyboard_connected())
     return -1;
     
-    Serial.println("Play/Paus QQ Media...");
+    log("Play/Paus QQ Media...");
     #if BLE_KEYWORD
     //QQ播放器
     bleKeyboard.press(KEY_LEFT_CTRL);
@@ -58,7 +61,7 @@ int keyboard_player_next(void)
     if(!check_keyboard_connected())
     return -1;
     
-    Serial.println("Play Next Media...");
+    log("Play Next Media...");
     #if BLE_KEYWORD
     bleKeyboard.write(KEY_MEDIA_NEXT_TRACK);
     delay(50);
@@ -71,7 +74,7 @@ int keyboard_player_previous(void)
     if(!check_keyboard_connected())
     return -1;
     
-    Serial.println("Play Previous Media...");
+    log("Play Previous Media...");
     #if BLE_KEYWORD
     bleKeyboard.write(KEY_MEDIA_PREVIOUS_TRACK);
     delay(50);
@@ -84,7 +87,7 @@ int keyboard_player_volume_mute(void)
     if(!check_keyboard_connected())
     return -1;
     
-    Serial.println("Volume Mute...");
+    log("Volume Mute...");
     #if BLE_KEYWORD
     bleKeyboard.write(KEY_MEDIA_MUTE);
     #endif
@@ -96,7 +99,7 @@ int keyboard_player_volume_up(void)
     if(!check_keyboard_connected())
     return -1;
     
-    Serial.println("Volume Up...");
+    log("Volume Up...");
     #if BLE_KEYWORD
     bleKeyboard.write(KEY_MEDIA_VOLUME_UP);
     #endif
@@ -108,7 +111,7 @@ int keyboard_player_volume_down(void)
     if(!check_keyboard_connected())
     return -1;
     
-    Serial.println("Volume Down...");
+    log("Volume Down...");
     #if BLE_KEYWORD
     bleKeyboard.write(KEY_MEDIA_VOLUME_DOWN);
     #endif
@@ -120,9 +123,9 @@ int keyboard_next_page(void)
     if(!check_keyboard_connected())
     return -1;
     
-    Serial.println("Next Page...");
+    log("Next Page...");
     #if BLE_KEYWORD
-    bleKeyboard.write(KEY_PAGE_DOWN);
+    bleKeyboard.write(KEY_DOWN_ARROW);
     #endif
     return 0;
 }
@@ -132,9 +135,9 @@ int keyboard_previous_page(void)
     if(!check_keyboard_connected())
     return -1;
     
-    Serial.println("Previous Page...");
+    log("Previous Page...");
     #if BLE_KEYWORD
-    bleKeyboard.write(KEY_PAGE_UP);
+    bleKeyboard.write(KEY_UP_ARROW);
     #endif
     return 0;
 }
@@ -144,7 +147,7 @@ int keyboard_zoom_up(void)
     if(!check_keyboard_connected())
     return -1;
     
-    Serial.println("Zoom Up...");
+    log("Zoom Up...");
     #if BLE_KEYWORD
     bleKeyboard.press(KEY_LEFT_GUI);
     bleKeyboard.print("+");
@@ -158,7 +161,7 @@ int keyboard_zoom_down(void)
     if(!check_keyboard_connected())
     return -1;
     
-    Serial.println("Zoom Down...");
+    log("Zoom Down...");
     #if BLE_KEYWORD
     bleKeyboard.press(KEY_LEFT_GUI);
     bleKeyboard.print("-");
@@ -167,12 +170,11 @@ int keyboard_zoom_down(void)
     return 0;
 }
 
-
 // int keyboard_windows_show(void)
 // {
 //     if(!check_keyboard_connected())
 //     return -1;
-//     Serial.println("Sending ctrl + v");
+//     log("Sending ctrl + v");
 //     #if BLE_KEYWORD
 //     bleKeyboard.press(KEY_LEFT_GUI);
 //     bleKeyboard.press(KEY_TAB);
@@ -192,3 +194,13 @@ int keyboard_zoom_down(void)
 //     bleKeyboard.releaseAll();
 //     return 0;
 // }
+
+void setLogger(Logger* logger) {
+    logger_ = logger;
+}
+
+void log(const char* msg) {
+    if (logger_ != nullptr) {
+        logger_->log(msg);
+    }
+}
