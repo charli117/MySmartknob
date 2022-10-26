@@ -260,6 +260,3 @@ This project is licensed under Apache v2 (software, electronics, documentation) 
     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
     See the License for the specific language governing permissions and
     limitations under the License.
-
-# 自定义展示
-<video src="./data/智能旋钮.mp4" controls="controls" width="500" height="300">点击查看</video>
