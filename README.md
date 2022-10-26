@@ -262,4 +262,4 @@ This project is licensed under Apache v2 (software, electronics, documentation) 
     limitations under the License.
 
 # 自定义展示
-<video src="https://www.bilibili.com/video/BV1MD4y1k78C?t=2.3" controls="controls" width="500" height="300">点击查看</video>
+<video src="./data/智能旋钮.mp4" controls="controls" width="500" height="300">点击查看</video>
