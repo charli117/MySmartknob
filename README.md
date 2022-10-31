@@ -237,7 +237,6 @@ TODO: document this
 
 Also TODO: implement a lot more of the firmware
 
-
 # Acknowledgements
 This project was greatly inspired by Jesse Schoch's video "[haptic textures and virtual detents](https://www.youtube.com/watch?v=1gPQfDkX3BU)" and the
 corresponding [discussion in the SimpleFOC community](https://community.simplefoc.com/t/haptic-textures/301). Seriously, this project wouldn't exist if not for that video - thank you Jesse!
@@ -260,3 +259,4 @@ This project is licensed under Apache v2 (software, electronics, documentation) 
     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
     See the License for the specific language governing permissions and
     limitations under the License.
+

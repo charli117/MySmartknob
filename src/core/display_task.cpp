@@ -24,7 +24,6 @@ void DisplayTask::run() {
     tft_.fillScreen(TFT_WHITE);
     tft_.invertDisplay(1);  // 反转显示
     tft_.setRotation(0);  // 字体旋转
-    // tft_.setTextSize(8);  // 字体大小
     // tft_.fillScreen(TFT_DARKGREEN);
 
     // 开机图片定义
@@ -66,11 +65,11 @@ void DisplayTask::run() {
           spr_.fillRect(0, TFT_HEIGHT - height, TFT_WIDTH, height, FILL_COLOR);
         }
 
-        // spr_.setFreeFont(&Roboto_Light_60);
+        spr_.setFreeFont(&POSITION_FONT);
         spr_.drawString(String() + state.current_position, TFT_WIDTH / 2, TFT_HEIGHT / 2 - VALUE_OFFSET, 1);
-        // spr_.setFreeFont(&DESCRIPTION_FONT);
-        int32_t line_y = TFT_HEIGHT / 2 + DESCRIPTION_Y_OFFSET;
+
         spr_.loadFont(hanz30);
+        int32_t line_y = TFT_HEIGHT / 2 + DESCRIPTION_Y_OFFSET;
         char* start = state.config.text;
         char* end = start + strlen(state.config.text);
         while (start < end) {
@@ -85,6 +84,9 @@ void DisplayTask::run() {
           start = newline + 1;
           line_y += spr_.fontHeight(1);
         }
+
+        // 释放字库文件
+        spr_.unloadFont();
 
         float left_bound = PI / 2;
 

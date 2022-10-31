@@ -145,7 +145,7 @@ static PB_SmartKnobConfig configs[] = {
     {
         0,
         0,
-        5 * PI / 180,
+        10 * PI / 180,
         0.6,
         1,
         1.1,
@@ -175,28 +175,28 @@ static PB_SmartKnobConfig configs[] = {
         "Play/Pause",
         "QQ音乐\n播放/暂停",
     },
-    {
-        1,
-        0,
-        10 * PI / 180,
-        0.01,
-        0.6,
-        1.1,
-        "缺省",
-        "缺省",
-        "Return-To-Center",
-    },
-    {
-        21,
-        0,
-        10 * PI / 180,
-        3,
-        1,
-        1.1,
-        "缺省",
-        "缺省",
-        "Bounded 0-20\nStrong Detents",
-    },
+    // {
+    //     1,
+    //     0,
+    //     10 * PI / 180,
+    //     0.01,
+    //     0.6,
+    //     1.1,
+    //     "缺省",
+    //     "缺省",
+    //     "Return-To-Center",
+    // },
+    // {
+    //     21,
+    //     0,
+    //     10 * PI / 180,
+    //     3,
+    //     1,
+    //     1.1,
+    //     "缺省",
+    //     "缺省",
+    //     "Bounded 0-20\nStrong Detents",
+    // },
 };
 
 InterfaceTask::InterfaceTask(const uint8_t task_core, MotorTask& motor_task, DisplayTask* display_task) : 
@@ -354,8 +354,6 @@ void InterfaceTask::run() {
             }
         #endif
 
-        
-
         // 主控配置信息查询
         #if GET_STATUS
             GetChipAndMemoryDetails();
@@ -476,16 +474,15 @@ void InterfaceTask::GetChipAndMemoryDetails (){
 // This function display the details of the integrated chip (memory, core, bluetooth)
 // It also give external memory size 
     /* Print chip information */
-    Serial.println();
     esp_chip_info_t chip_info;
     esp_chip_info(&chip_info);
-    Serial.printf("This is ESP32 chip with %d CPU cores, WiFi%s%s, ",
+    stream_.printf("This is ESP32 chip with %d CPU cores, WiFi%s%s, ",
                   chip_info.cores,
                   (chip_info.features & CHIP_FEATURE_BT) ? "/BT" : "",
                   (chip_info.features & CHIP_FEATURE_BLE) ? "/BLE" : "");
-    Serial.println();
-    Serial.printf("silicon revision %d, ", chip_info.revision);
-    Serial.println();
-    Serial.printf("%dMB %s flash\n", spi_flash_get_chip_size() / (1024 * 1024),
+    stream_.println();
+    stream_.printf("silicon revision %d, ", chip_info.revision);
+    stream_.println();
+    stream_.printf("%dMB %s flash\n", spi_flash_get_chip_size() / (1024 * 1024),
                   (chip_info.features & CHIP_FEATURE_EMB_FLASH) ? "embedded" : "external");
 }

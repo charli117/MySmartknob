@@ -9,14 +9,16 @@ void SerialProtocolPlaintext::handleState(const PB_SmartKnobState& state) {
         || (latest_state_.config.num_positions != state.config.num_positions);
     latest_state_ = state;
 
-    if (substantial_change) {
+    if (substantial_change && ENABLE_STATE == 1) {
         stream_.printf("STATE: %d/%d  (detent strength: %0.2f, width: %0.0f deg, endstop strength: %0.2f)\n", state.current_position, state.config.num_positions - 1, state.config.detent_strength_unit, degrees(state.config.position_width_radians), state.config.endstop_strength_unit);
     }
 }
 
 void SerialProtocolPlaintext::log(const char* msg) {
-    stream_.print("LOG: ");
-    stream_.println(msg);
+    if ( ENABLE_LOG == 1){
+        stream_.print("LOG: ");
+        stream_.println(msg);
+    }
 }
 
 void SerialProtocolPlaintext::loop() {
@@ -41,4 +43,5 @@ void SerialProtocolPlaintext::loop() {
 void SerialProtocolPlaintext::init(DemoConfigChangeCallback cb) {
     demo_config_change_callback_ = cb;
     stream_.println("SmartKnob starting!\n\nSerial mode: plaintext\nPress 'C' at any time to calibrate.\nPress <Space> to change haptic modes.");
+    delay(3000);
 }

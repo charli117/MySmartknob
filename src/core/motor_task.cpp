@@ -10,7 +10,7 @@
 // #### 
 // Hardware-specific motor calibration constants.
 // Run calibration once at startup, then update these constants with the calibration results.
-static const float ZERO_ELECTRICAL_OFFSET = 2.77;
+static const float ZERO_ELECTRICAL_OFFSET = 7.16;
 static const Direction FOC_DIRECTION = Direction::CW;
 static const int MOTOR_POLE_PAIRS = 7;
 // ####
@@ -89,7 +89,7 @@ void MotorTask::run() {
     .num_positions = 32,
     .position = 0,
     .position_width_radians = 8.225806452 * _PI / 180,
-    .detent_strength_unit = 2.3,
+    .detent_strength_unit = 1,
     .endstop_strength_unit = 1,
     .snap_point = 1.1,
     };
