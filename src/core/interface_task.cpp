@@ -242,9 +242,8 @@ void InterfaceTask::run() {
         }
     #endif
 
-    motor_task_.setConfig(configs[0]);
+    motor_task_.setConfig(configs[1]);
     motor_task_.addListener(knob_state_queue_);
-
 
     // Start in legacy protocol mode
     plaintext_protocol_.init([this] () {
@@ -283,82 +282,9 @@ void InterfaceTask::run() {
             current_protocol->log(log_string->c_str());
             delete log_string;
         }
-        
+
         // LED、压力传感器等状态更新
-        updateHardware();
-
-        // 蓝牙虚拟键盘指令推送
-        #if BLE_KEYWORD
-            const char* device_type_ = state.config.device_type;
-            const char* device_operate_ = state.config.device_operate;
-
-            if(strcmp(device_type_,"Computer") == 0 && strcmp(device_operate_,"Volume")==0) {
-                static int now_volume_num = 0;
-                static int old_volume_num = 0;
-                now_volume_num = state.current_position;
-                if (now_volume_num > old_volume_num)
-                {
-                    keyboard_player_volume_up();
-                    old_volume_num = state.current_position;
-                } else if (now_volume_num < old_volume_num) {
-                    keyboard_player_volume_down();
-                    old_volume_num = state.current_position;
-                }
-            }
-            else if (strcmp(device_type_,"Computer") == 0 && strcmp(device_operate_,"UpDown") == 0){
-                static int now_updown_num = 1;
-                static int old_updown_num = 0;
-                now_updown_num = state.current_position;
-                if (now_updown_num > old_updown_num)
-                {
-                    keyboard_next_page();
-                    old_updown_num = state.current_position;
-                } else if (now_updown_num < old_updown_num) {
-                    keyboard_previous_page();
-                    old_updown_num = state.current_position;
-                }
-            } else if (strcmp(device_type_,"Computer") == 0 && strcmp(device_operate_,"Switch") == 0){
-                static int now_switch_num = 1;
-                static int old_switch_num = 0;
-                now_switch_num = state.current_position;
-                if (now_switch_num > old_switch_num)
-                {
-                    keyboard_player_next();
-                    old_switch_num = state.current_position;
-                } else if (now_switch_num < old_switch_num) {
-                    keyboard_player_previous();
-                    old_switch_num = state.current_position;
-                }
-            }
-            else if (strcmp(device_type_,"Computer") == 0 && strcmp(device_operate_,"Play/Pause") == 0){
-                static int now_play_num = 0;
-                static int old_play_num = 0;
-                now_play_num = state.current_position;
-                if (now_play_num != old_play_num)
-                {
-                    keyboard_enable_qq_music();
-                    old_play_num = state.current_position;
-                } 
-            } else if(strcmp(device_type_,"Computer") == 0 && strcmp(device_operate_,"Zoom") == 0) {
-                static int now_zoom_num = 0;
-                static int old_zoom_num = 0;
-                now_zoom_num = state.current_position;
-                if (now_zoom_num > old_zoom_num)
-                {
-                    keyboard_zoom_up();
-                    old_zoom_num = state.current_position;
-                } else if (now_zoom_num < old_zoom_num) {
-                    keyboard_zoom_down();
-                    old_zoom_num = state.current_position;
-                }
-            }
-        #endif
-
-        // 主控配置信息查询
-        #if GET_STATUS
-            GetChipAndMemoryDetails();
-            delay(3000);
-        #endif
+        updateHardware(state.config.num_positions, state.current_position, state.config.position_width_radians, state.config.device_type, state.config.device_operate);
 
         delay(10);
     }
@@ -389,7 +315,7 @@ void InterfaceTask::changeConfig(bool next) {
     motor_task_.setConfig(configs[current_config_]);
 }
 
-void InterfaceTask::updateHardware() {
+void InterfaceTask::updateHardware(int32_t num_positions, int32_t current_position, float position_width_radians, char* device_type, char* device_operate) {
     // How far button is pressed, in range [0, 1]
     float press_value_unit = 0;
 
@@ -457,6 +383,77 @@ void InterfaceTask::updateHardware() {
         display_task_->setBrightness(brightness); // TODO: apply gamma correction
     #endif
 
+    // 蓝牙虚拟键盘指令推送
+    #if BLE_KEYWORD
+        if(strcmp(device_type,"Computer") == 0 && strcmp(device_operate,"Volume")==0) {
+            static int now_volume_num = 0;
+            static int old_volume_num = 0;
+            now_volume_num = current_position;
+            if (now_volume_num > old_volume_num)
+            {
+                keyboard_player_volume_up();
+                old_volume_num = current_position;
+            } else if (now_volume_num < old_volume_num) {
+                keyboard_player_volume_down();
+                old_volume_num = current_position;
+            }
+        }
+        else if (strcmp(device_type,"Computer") == 0 && strcmp(device_operate,"UpDown") == 0){
+            static int now_updown_num = 1;
+            static int old_updown_num = 0;
+            now_updown_num = current_position;
+            if (now_updown_num > old_updown_num)
+            {
+                keyboard_next_page();
+                old_updown_num = current_position;
+            } else if (now_updown_num < old_updown_num) {
+                keyboard_previous_page();
+                old_updown_num = current_position;
+            }
+        } else if (strcmp(device_type,"Computer") == 0 && strcmp(device_operate,"Switch") == 0){
+            static int now_switch_num = 1;
+            static int old_switch_num = 0;
+            now_switch_num = current_position;
+            if (now_switch_num > old_switch_num)
+            {
+                keyboard_player_next();
+                old_switch_num = current_position;
+            } else if (now_switch_num < old_switch_num) {
+                keyboard_player_previous();
+                old_switch_num = current_position;
+            }
+        }
+        else if (strcmp(device_type,"Computer") == 0 && strcmp(device_operate,"Play/Pause") == 0){
+            static int now_play_num = 0;
+            static int old_play_num = 0;
+            now_play_num = current_position;
+            if (now_play_num != old_play_num)
+            {
+                keyboard_enable_qq_music();
+                old_play_num = current_position;
+            } 
+        } else if(strcmp(device_type,"Computer") == 0 && strcmp(device_operate,"Zoom") == 0) {
+            static int now_zoom_num = 0;
+            static int old_zoom_num = 0;
+            now_zoom_num = current_position;
+            if (now_zoom_num > old_zoom_num)
+            {
+                keyboard_zoom_up();
+                old_zoom_num = current_position;
+            } else if (now_zoom_num < old_zoom_num) {
+                keyboard_zoom_down();
+                old_zoom_num = current_position;
+            }
+        }
+    #endif
+
+    // 主控配置信息查询
+    #if GET_STATUS
+        GetChipAndMemoryDetails();
+        delay(3000);
+    #endif
+
+    // LED按压变色控制
     #if SK_LEDS
         for (uint8_t i = 0; i < NUM_LEDS; i++) {
             leds[i].setHSV(200 * press_value_unit, 255, brightness >> 8);
@@ -466,8 +463,43 @@ void InterfaceTask::updateHardware() {
             leds[i].g = dim8_video(leds[i].g);
             leds[i].b = dim8_video(leds[i].b);
         }
-        FastLED.show();
-    #endif
+
+        // 根据旋转角度控制LED显示
+        if (num_positions == 0 && SK_LEDS == 1) {
+            int32_t light_up = 5;
+            int32_t old_light_up = 8;
+            float left_bound = PI / 2;
+            float raw_angle = left_bound - current_position * position_width_radians;
+
+            if (sinf(raw_angle) <= 1 && sinf(raw_angle) > 0.7 && cosf(raw_angle) >= 0 && cosf(raw_angle) < 0.7){
+                light_up = 5;
+                leds[light_up] = CRGB::Green;
+            } else if (sinf(raw_angle) <= 0.7 && sinf(raw_angle) > 0 && cosf(raw_angle) >= 0.7 && cosf(raw_angle) < 1){
+                light_up = 4;
+                leds[light_up] = CRGB::Green;
+            } else if (sinf(raw_angle) <= 0 && sinf(raw_angle) > -0.7 && cosf(raw_angle) <= 1 && cosf(raw_angle) > 0.7){
+                light_up = 3;
+                leds[light_up] = CRGB::Green;
+            } else if (sinf(raw_angle) <= -0.7 && sinf(raw_angle) > -1 && cosf(raw_angle) <= 0.7 && cosf(raw_angle) > 0){
+                light_up = 2;
+                leds[light_up] = CRGB::Green;
+            } else if (sinf(raw_angle) >= -1 && sinf(raw_angle) < -0.7 && cosf(raw_angle) <= 0 && cosf(raw_angle) > -0.7){
+                light_up = 1;
+                leds[light_up] = CRGB::Green;
+            } else if (sinf(raw_angle) >= -0.7 && sinf(raw_angle) < 0 && cosf(raw_angle) <= -0.7 && cosf(raw_angle) > -1){
+                light_up = 0;
+                leds[light_up] = CRGB::Green;
+            } else if (sinf(raw_angle) >= 0 && sinf(raw_angle) < 0.7 && cosf(raw_angle) >= -1 && cosf(raw_angle) < -0.7){
+                light_up = 7;
+                leds[light_up] = CRGB::Green;
+            } else if (sinf(raw_angle) >= 0.7 && sinf(raw_angle) < 1 && cosf(raw_angle) >= -0.7 && cosf(raw_angle) < 0){
+                light_up = 6;
+                leds[light_up] = CRGB::Green;
+            }
+
+            FastLED.show();
+        }
+    #endif    
 }
 
 void InterfaceTask::GetChipAndMemoryDetails (){  

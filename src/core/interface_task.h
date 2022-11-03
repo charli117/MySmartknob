@@ -38,5 +38,5 @@ class InterfaceTask : public Task<InterfaceTask>, public Logger {
         SerialProtocolProtobuf proto_protocol_;
 
         void changeConfig(bool next);
-        void updateHardware();
+        void updateHardware(int32_t num_positions, int32_t current_position, float position_width_radians, char* device_type, char* device_operate);
 };

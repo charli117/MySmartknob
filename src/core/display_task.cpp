@@ -88,8 +88,8 @@ void DisplayTask::run() {
         // 释放字库文件
         spr_.unloadFont();
 
+        
         float left_bound = PI / 2;
-
         if (state.config.num_positions > 0) {
           float range_radians = (state.config.num_positions - 1) * state.config.position_width_radians;
           left_bound = PI / 2 + range_radians / 2;
@@ -97,6 +97,8 @@ void DisplayTask::run() {
           spr_.drawLine(TFT_WIDTH/2 + RADIUS * cosf(left_bound), TFT_HEIGHT/2 - RADIUS * sinf(left_bound), TFT_WIDTH/2 + (RADIUS - 10) * cosf(left_bound), TFT_HEIGHT/2 - (RADIUS - 10) * sinf(left_bound), TFT_WHITE);
           spr_.drawLine(TFT_WIDTH/2 + RADIUS * cosf(right_bound), TFT_HEIGHT/2 - RADIUS * sinf(right_bound), TFT_WIDTH/2 + (RADIUS - 10) * cosf(right_bound), TFT_HEIGHT/2 - (RADIUS - 10) * sinf(right_bound), TFT_WHITE);
         }
+
+        // 指向圆点绘制
         if (DRAW_ARC) {
           spr_.drawCircle(TFT_WIDTH/2, TFT_HEIGHT/2, RADIUS, TFT_DARKGREY);
         }
