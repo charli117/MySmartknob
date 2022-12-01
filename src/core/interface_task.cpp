@@ -242,7 +242,7 @@ void InterfaceTask::run() {
         }
     #endif
 
-    motor_task_.setConfig(configs[1]);
+    motor_task_.setConfig(configs[0]);
     motor_task_.addListener(knob_state_queue_);
 
     // Start in legacy protocol mode
@@ -308,7 +308,7 @@ void InterfaceTask::changeConfig(bool next) {
             current_config_ --;
         }
     }
-    
+
     char buf_[256];
     snprintf(buf_, sizeof(buf_), "Changing config to %d -- %s", current_config_, configs[current_config_].text);
     log(buf_);
@@ -496,9 +496,10 @@ void InterfaceTask::updateHardware(int32_t num_positions, int32_t current_positi
                 light_up = 6;
                 leds[light_up] = CRGB::Green;
             }
-
-            FastLED.show();
         }
+        
+        // 刷新LED颜色
+        FastLED.show();
     #endif    
 }
 
