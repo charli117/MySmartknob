@@ -5,6 +5,10 @@
 
 void ble_keyboard_init(void);
 bool check_keyboard_connected(void);
+int surface_dail_left(void);
+int surface_dail_right(void);
+int surface_dail_click(void);
+int surface_dail_release(void);
 int keyboard_enable_player(void);
 int keyboard_enable_qq_music(void);
 int keyboard_player_next(void);

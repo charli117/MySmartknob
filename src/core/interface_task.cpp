@@ -31,6 +31,9 @@ HX711 scale;
 Adafruit_VEML7700 veml = Adafruit_VEML7700();
 #endif
 
+uint8_t pressed, push_states;
+uint32_t push_time, push_in_time, push_two_time;
+
 static PB_SmartKnobConfig configs[] = {
     // int32_t num_positions;
     // int32_t position;
@@ -121,8 +124,19 @@ static PB_SmartKnobConfig configs[] = {
     //     "Coarse values\nWeak detents",
     // },
     {
-        256,
-        127,
+        0,
+        0,
+        1 * PI / 180,
+        0.6,
+        1,
+        1.1,
+        "Surface",
+        "Dail",
+        "Surface Dail",
+    },
+    {
+        241,
+        141,
         1 * PI / 180,
         0.6,
         1,
@@ -135,7 +149,7 @@ static PB_SmartKnobConfig configs[] = {
         0,
         0,
         10 * PI / 180,
-        1.5,
+        2,
         1,
         1.1,
         "Computer",
@@ -157,7 +171,7 @@ static PB_SmartKnobConfig configs[] = {
         0,
         0,
         10 * PI / 180,
-        0.3,
+        0.5,
         1,
         1.1,
         "Computer",
@@ -316,19 +330,24 @@ void InterfaceTask::changeConfig(bool next) {
 }
 
 void InterfaceTask::updateHardware(int32_t num_positions, int32_t current_position, float position_width_radians, char* device_type, char* device_operate) {
-    // How far button is pressed, in range [0, 1]
     float press_value_unit = 0;
-
+    unsigned long currentMillis = millis();
+    
     #if SK_ALS
         const float LUX_ALPHA = 0.005;
         static float lux_avg;
         float lux = veml.readLux();
         lux_avg = lux * LUX_ALPHA + lux_avg * (1 - LUX_ALPHA);
+        
+        uint16_t brightness = UINT16_MAX;
+        brightness = (uint16_t)CLAMP(lux_avg * 13000, (float)1280, (float)UINT16_MAX);
+
         static uint32_t last_als;
         if (millis() - last_als > 1000) {
-            snprintf(buf_, sizeof(buf_), "millilux: %.2f", lux*1000);
-            log(buf_);
             last_als = millis();
+            snprintf(buf_, sizeof(buf_), "Millilux: %.2f", lux*1000);
+            // snprintf(buf_, sizeof(buf_), "LED: %.2f/%.4f", brightness, brightness >> 8);
+            log(buf_);
         }
     #endif
 
@@ -344,21 +363,59 @@ void InterfaceTask::updateHardware(int32_t num_positions, int32_t current_positi
             }
 
             // TODO: calibrate and track (long term moving average) zero point (lower); allow calibration of set point offset
-            const int32_t lower = 300000;
-            const int32_t upper = 900000;
-            // Ignore readings that are way out of expected bounds
+            const int32_t lower = 620000;
+            const int32_t upper = 990000;
+
+            // 忽略远远超出预期的应变读数
             if (reading >= lower - (upper - lower) && reading < upper + (upper - lower)*2) {
                 long value = CLAMP(reading, lower, upper);
                 press_value_unit = 1. * (value - lower) / (upper - lower);
 
-                static bool pressed;
+                // static bool pressed;
                 if (!pressed && press_value_unit > 0.75) {
+                    // 初始化赋值
+                    if (pressed == 0) {
+                        push_time = millis();
+                        pressed = 1;
+                    }
+
+                    //消抖15ms
+                    if (push_time - push_in_time > 20) {
+                        if (pressed == 1) {
+                            pressed = 2;
+                            push_in_time = millis();
+                            if (push_in_time - push_two_time < 500) {
+                                // 双击
+                                push_states = 2;
+                                changeConfig(true);
+                            } else {
+                                // 单击
+                                push_states = 1;
+                            }
+                        }
+                        // snprintf(buf_, sizeof(buf_), "Click Value1: %d/%d/%d", pressed,push_states,push_in_time - push_two_time);
+                        // log(buf_);
+                    }
+
+                    if (pressed == 2) {
+                        if (push_time - push_in_time > 300) {
+                            //长按
+                            push_states = 3;
+                        }
+                        // snprintf(buf_, sizeof(buf_), "Click Value2 %d/%d/%d", pressed,push_states,push_time - push_in_time);
+                        // log(buf_);
+                    }
                     motor_task_.playHaptic(true);
-                    pressed = true;
-                    changeConfig(true);
+
+                    // snprintf(buf_, sizeof(buf_), "Click Value3: %d/%f/%d/%d/%d/%d/%d", pressed,press_value_unit,currentMillis,push_time,push_in_time,push_two_time);
+                    // log(buf_);
+
                 } else if (pressed && press_value_unit < 0.25) {
+                    push_two_time = millis();
+                    pressed = 0;
+                    push_states = 4;
                     motor_task_.playHaptic(false);
-                    pressed = false;
+                    // log("Release.");
                 }
             }
         } else {
@@ -373,19 +430,48 @@ void InterfaceTask::updateHardware(int32_t num_positions, int32_t current_positi
         }
     #endif
 
-    uint16_t brightness = UINT16_MAX;
-    // TODO: brightness scale factor should be configurable (depends on reflectivity of surface)
-    #if SK_ALS
-        brightness = (uint16_t)CLAMP(lux_avg * 13000, (float)1280, (float)UINT16_MAX);
-    #endif
-
     #if SK_DISPLAY
         display_task_->setBrightness(brightness); // TODO: apply gamma correction
     #endif
 
     // 蓝牙虚拟键盘指令推送
     #if BLE_KEYWORD
-        if(strcmp(device_type,"Computer") == 0 && strcmp(device_operate,"Volume")==0) {
+        if(strcmp(device_type,"Surface") == 0 && strcmp(device_operate,"Dail")==0) {
+            static int now_dail_num = 0;
+            static int old_dail_num = 0;
+            now_dail_num = current_position;
+
+            // 左右旋转
+            if (now_dail_num > old_dail_num) {
+                surface_dail_right();
+                old_dail_num = current_position;
+            } else if (now_dail_num < old_dail_num) {
+                surface_dail_left();
+                old_dail_num = current_position;
+            }
+            if (pressed) {
+                snprintf(buf_, sizeof(buf_), "Click5 Value: %d/%d/%d", pressed,push_states);
+                log(buf_);
+                switch (push_states) {
+                    case 1:  //单击
+                        log("Surface Dail Click.");
+                        surface_dail_click();
+                        break;
+                    case 2:  //长按
+                        break;
+                    case 3:  //长按
+                        break;
+                    case 4:  //松开
+                        log("Surface Dail Release.");
+                        surface_dail_release();
+                        break;
+                    default:
+                        break;
+                }
+                push_states = 0;
+            }
+        }
+        else if(strcmp(device_type,"Computer") == 0 && strcmp(device_operate,"Volume")==0) {
             static int now_volume_num = 0;
             static int old_volume_num = 0;
             now_volume_num = current_position;
@@ -453,7 +539,7 @@ void InterfaceTask::updateHardware(int32_t num_positions, int32_t current_positi
         delay(3000);
     #endif
 
-    // LED按压变色控制
+    // LED颜色跟随控制
     #if SK_LEDS
         for (uint8_t i = 0; i < NUM_LEDS; i++) {
             leds[i].setHSV(200 * press_value_unit, 255, brightness >> 8);
@@ -467,7 +553,6 @@ void InterfaceTask::updateHardware(int32_t num_positions, int32_t current_positi
         // 根据旋转角度控制LED显示
         if (num_positions == 0 && SK_LEDS == 1) {
             int32_t light_up = 5;
-            int32_t old_light_up = 8;
             float left_bound = PI / 2;
             float raw_angle = left_bound - current_position * position_width_radians;
 
@@ -497,10 +582,10 @@ void InterfaceTask::updateHardware(int32_t num_positions, int32_t current_positi
                 leds[light_up] = CRGB::Green;
             }
         }
-        
+
         // 刷新LED颜色
         FastLED.show();
-    #endif    
+    #endif
 }
 
 void InterfaceTask::GetChipAndMemoryDetails (){  

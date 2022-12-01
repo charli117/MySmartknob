@@ -35,9 +35,9 @@ typedef struct _PB_SmartKnobConfig {
     float endstop_strength_unit;
     //中断点 
     float snap_point;
-    // int32_t 设备类型
+    // char 设备类型
     char device_type[51];
-    // int32_t 操作类型
+    // char 操作类型
     char device_operate[51];
     // char 功能描述, 51个字符;
     char text[51];

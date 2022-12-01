@@ -4,13 +4,15 @@
 #include "core/interface_task.h"
 #include "core/motor_task.h"
 
+
 #if BLE_KEYWORD
 #include "external/ble_keyboard.h"
 #endif
 
-// #if HOMEKIT
-// #include "external/homekit_wifi.h"
-// #endif 
+#if HOMEKIT
+#include <HomeSpan.h>
+#include "external/DEV_LED.h"
+#endif 
 
 #if SK_DISPLAY
 static DisplayTask display_task(0);
@@ -41,7 +43,18 @@ void setup() {
   #endif
 
   // #if HOMEKIT
-  // homekit_wifi_connect();
+  // Serial.begin(115200);
+
+  // homeSpan.begin(Category::Lighting, "MI Monitor Light");
+  // new SpanAccessory();  
+  //   new Service::AccessoryInformation();
+  //     new Characteristic::Identify(); 
+  
+  // new SpanAccessory(); 
+  //   new Service::AccessoryInformation();    
+  //     new Characteristic::Identify();
+  //     new Characteristic::Name("Dimmable LED");         
+  //   new DEV_DimmableLED(6); 
   // #endif
 
   // Free up the Arduino loop task
@@ -49,6 +62,9 @@ void setup() {
 }
 
 void loop() {
+  // #if HOMEKIT
+  // homeSpan.poll();
+  // #endif
   // char buf[50];
   // static uint32_t last_stack_debug;
   // if (millis() - last_stack_debug > 1000) {
