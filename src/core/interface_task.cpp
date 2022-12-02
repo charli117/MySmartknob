@@ -31,6 +31,7 @@ HX711 scale;
 Adafruit_VEML7700 veml = Adafruit_VEML7700();
 #endif
 
+static int is_display = 0;
 uint8_t pressed, push_states;
 uint32_t push_time, push_in_time, push_two_time;
 
@@ -343,7 +344,7 @@ void InterfaceTask::updateHardware(int32_t num_positions, int32_t current_positi
         brightness = (uint16_t)CLAMP(lux_avg * 13000, (float)1280, (float)UINT16_MAX);
 
         static uint32_t last_als;
-        if (millis() - last_als > 1000) {
+        if (millis() - last_als > 5000) {
             last_als = millis();
             snprintf(buf_, sizeof(buf_), "Millilux: %.2f", lux*1000);
             // snprintf(buf_, sizeof(buf_), "LED: %.2f/%.4f", brightness, brightness >> 8);
@@ -356,7 +357,7 @@ void InterfaceTask::updateHardware(int32_t num_positions, int32_t current_positi
             int32_t reading = scale.read();
 
             static uint32_t last_reading_display;
-            if (millis() - last_reading_display > 1000) {
+            if (millis() - last_reading_display > 5000) {
                 snprintf(buf_, sizeof(buf_), "HX711 reading: %d", reading);
                 log(buf_);
                 last_reading_display = millis();
@@ -393,29 +394,31 @@ void InterfaceTask::updateHardware(int32_t num_positions, int32_t current_positi
                                 push_states = 1;
                             }
                         }
-                        // snprintf(buf_, sizeof(buf_), "Click Value1: %d/%d/%d", pressed,push_states,push_in_time - push_two_time);
-                        // log(buf_);
-                    }
-
-                    if (pressed == 2) {
-                        if (push_time - push_in_time > 300) {
-                            //长按
-                            push_states = 3;
-                        }
-                        // snprintf(buf_, sizeof(buf_), "Click Value2 %d/%d/%d", pressed,push_states,push_time - push_in_time);
-                        // log(buf_);
                     }
                     motor_task_.playHaptic(true);
+                }
 
-                    // snprintf(buf_, sizeof(buf_), "Click Value3: %d/%f/%d/%d/%d/%d/%d", pressed,press_value_unit,currentMillis,push_time,push_in_time,push_two_time);
-                    // log(buf_);
-
-                } else if (pressed && press_value_unit < 0.25) {
+                if (pressed == 2) {
+                    int32_t click_long = currentMillis - push_in_time;
+                    if (click_long > 300) {
+                        //长按
+                        push_states = 3;
+                    }
+                }
+                
+                if (pressed && press_value_unit < 0.25) {
                     push_two_time = millis();
                     pressed = 0;
-                    push_states = 4;
+                    #if BLE_KEYWORD
+                        if(strcmp(device_type,"Surface") == 0 && strcmp(device_operate,"Dail")==0 && push_states == 3) {
+                            //松开
+                            surface_dail_release();
+                            push_states = 0;
+                            log("Surface Dail Release.");
+                            log(buf_);
+                        }
+                    #endif
                     motor_task_.playHaptic(false);
-                    // log("Release.");
                 }
             }
         } else {
@@ -450,20 +453,15 @@ void InterfaceTask::updateHardware(int32_t num_positions, int32_t current_positi
                 old_dail_num = current_position;
             }
             if (pressed) {
-                snprintf(buf_, sizeof(buf_), "Click5 Value: %d/%d/%d", pressed,push_states);
-                log(buf_);
                 switch (push_states) {
                     case 1:  //单击
-                        log("Surface Dail Click.");
                         surface_dail_click();
+                        log("Surface Dail Click.");
+                        log(buf_);
                         break;
-                    case 2:  //长按
+                    case 2:  //双击
                         break;
                     case 3:  //长按
-                        break;
-                    case 4:  //松开
-                        log("Surface Dail Release.");
-                        surface_dail_release();
                         break;
                     default:
                         break;
@@ -535,8 +533,7 @@ void InterfaceTask::updateHardware(int32_t num_positions, int32_t current_positi
 
     // 主控配置信息查询
     #if GET_STATUS
-        GetChipAndMemoryDetails();
-        delay(3000);
+        GetChipAndMemoryDetails();        
     #endif
 
     // LED颜色跟随控制
@@ -594,13 +591,27 @@ void InterfaceTask::GetChipAndMemoryDetails (){
     /* Print chip information */
     esp_chip_info_t chip_info;
     esp_chip_info(&chip_info);
-    stream_.printf("This is ESP32 chip with %d CPU cores, WiFi%s%s, ",
-                  chip_info.cores,
-                  (chip_info.features & CHIP_FEATURE_BT) ? "/BT" : "",
-                  (chip_info.features & CHIP_FEATURE_BLE) ? "/BLE" : "");
-    stream_.println();
-    stream_.printf("silicon revision %d, ", chip_info.revision);
-    stream_.println();
-    stream_.printf("%dMB %s flash\n", spi_flash_get_chip_size() / (1024 * 1024),
-                  (chip_info.features & CHIP_FEATURE_EMB_FLASH) ? "embedded" : "external");
+
+    if(is_display == 0){
+        delay(3000);
+        snprintf(buf_, sizeof(buf_), "This is ESP32 chip with %d CPU cores, WiFi%s%s, ", 
+                    chip_info.cores,
+                    (chip_info.features & CHIP_FEATURE_BT) ? "/BT" : "",
+                    (chip_info.features & CHIP_FEATURE_BLE) ? "/BLE" : "");
+        log(buf_);
+
+        snprintf(buf_, sizeof(buf_), "Silicon Revision %d", chip_info.revision);
+        log(buf_);
+
+        snprintf(buf_, sizeof(buf_), "%d MB %s Flash", spi_flash_get_chip_size() / (1024 * 1024),
+                    (chip_info.features & CHIP_FEATURE_EMB_FLASH) ? "Embedded" : "External");
+        log(buf_);
+
+        snprintf(buf_, sizeof(buf_), "SDK version:%s", esp_get_idf_version());
+        log(buf_);
+
+        snprintf(buf_, sizeof(buf_), "Free Memory %d KB", esp_get_free_heap_size() / 1024);
+        log(buf_);
+        is_display = 1;
+    }
 }
