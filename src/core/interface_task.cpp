@@ -325,7 +325,7 @@ void InterfaceTask::changeConfig(bool next) {
     }
 
     char buf_[256];
-    snprintf(buf_, sizeof(buf_), "Changing config to %d -- %s", current_config_, configs[current_config_].text);
+    snprintf(buf_, sizeof(buf_), "Changing Config To %d -- %s", current_config_, configs[current_config_].text);
     log(buf_);
     motor_task_.setConfig(configs[current_config_]);
 }
@@ -344,7 +344,7 @@ void InterfaceTask::updateHardware(int32_t num_positions, int32_t current_positi
         brightness = (uint16_t)CLAMP(lux_avg * 13000, (float)1280, (float)UINT16_MAX);
 
         static uint32_t last_als;
-        if (millis() - last_als > 5000) {
+        if (millis() - last_als > 1000) {
             last_als = millis();
             snprintf(buf_, sizeof(buf_), "Millilux: %.2f", lux*1000);
             // snprintf(buf_, sizeof(buf_), "LED: %.2f/%.4f", brightness, brightness >> 8);
@@ -357,15 +357,15 @@ void InterfaceTask::updateHardware(int32_t num_positions, int32_t current_positi
             int32_t reading = scale.read();
 
             static uint32_t last_reading_display;
-            if (millis() - last_reading_display > 5000) {
+            if (millis() - last_reading_display > 1000) {
                 snprintf(buf_, sizeof(buf_), "HX711 reading: %d", reading);
                 log(buf_);
                 last_reading_display = millis();
             }
 
             // TODO: calibrate and track (long term moving average) zero point (lower); allow calibration of set point offset
-            const int32_t lower = 620000;
-            const int32_t upper = 990000;
+            const int32_t lower = 600000;
+            const int32_t upper = 900000;
 
             // 忽略远远超出预期的应变读数
             if (reading >= lower - (upper - lower) && reading < upper + (upper - lower)*2) {
@@ -373,7 +373,7 @@ void InterfaceTask::updateHardware(int32_t num_positions, int32_t current_positi
                 press_value_unit = 1. * (value - lower) / (upper - lower);
 
                 // static bool pressed;
-                if (!pressed && press_value_unit > 0.75) {
+                if (!pressed && press_value_unit > 0.85) {
                     // 初始化赋值
                     if (pressed == 0) {
                         push_time = millis();
@@ -388,6 +388,8 @@ void InterfaceTask::updateHardware(int32_t num_positions, int32_t current_positi
                             if (push_in_time - push_two_time < 500) {
                                 // 双击
                                 push_states = 2;
+                                log("Surface Dail Double Click.");
+                                log(buf_);
                                 changeConfig(true);
                             } else {
                                 // 单击
@@ -437,6 +439,54 @@ void InterfaceTask::updateHardware(int32_t num_positions, int32_t current_positi
         display_task_->setBrightness(brightness); // TODO: apply gamma correction
     #endif
 
+    // LED颜色跟随控制
+    #if SK_LEDS
+        for (uint8_t i = 0; i < NUM_LEDS; i++) {
+            leds[i].setHSV(200 * press_value_unit, 255, brightness >> 8);
+
+            // Gamma adjustment
+            leds[i].r = dim8_video(leds[i].r);
+            leds[i].g = dim8_video(leds[i].g);
+            leds[i].b = dim8_video(leds[i].b);
+        }
+
+        // 根据旋转角度控制LED显示
+        if (num_positions == 0 && SK_LEDS == 1) {
+            int32_t light_up = 5;
+            float left_bound = PI / 2;
+            float raw_angle = left_bound - current_position * position_width_radians;
+
+            if (sinf(raw_angle) <= 1 && sinf(raw_angle) > 0.7 && cosf(raw_angle) >= 0 && cosf(raw_angle) < 0.7){
+                light_up = 5;
+                leds[light_up] = CRGB::Green;
+            } else if (sinf(raw_angle) <= 0.7 && sinf(raw_angle) > 0 && cosf(raw_angle) >= 0.7 && cosf(raw_angle) < 1){
+                light_up = 4;
+                leds[light_up] = CRGB::Green;
+            } else if (sinf(raw_angle) <= 0 && sinf(raw_angle) > -0.7 && cosf(raw_angle) <= 1 && cosf(raw_angle) > 0.7){
+                light_up = 3;
+                leds[light_up] = CRGB::Green;
+            } else if (sinf(raw_angle) <= -0.7 && sinf(raw_angle) > -1 && cosf(raw_angle) <= 0.7 && cosf(raw_angle) > 0){
+                light_up = 2;
+                leds[light_up] = CRGB::Green;
+            } else if (sinf(raw_angle) >= -1 && sinf(raw_angle) < -0.7 && cosf(raw_angle) <= 0 && cosf(raw_angle) > -0.7){
+                light_up = 1;
+                leds[light_up] = CRGB::Green;
+            } else if (sinf(raw_angle) >= -0.7 && sinf(raw_angle) < 0 && cosf(raw_angle) <= -0.7 && cosf(raw_angle) > -1){
+                light_up = 0;
+                leds[light_up] = CRGB::Green;
+            } else if (sinf(raw_angle) >= 0 && sinf(raw_angle) < 0.7 && cosf(raw_angle) >= -1 && cosf(raw_angle) < -0.7){
+                light_up = 7;
+                leds[light_up] = CRGB::Green;
+            } else if (sinf(raw_angle) >= 0.7 && sinf(raw_angle) < 1 && cosf(raw_angle) >= -0.7 && cosf(raw_angle) < 0){
+                light_up = 6;
+                leds[light_up] = CRGB::Green;
+            }
+        }
+
+        // 刷新LED颜色
+        FastLED.show();
+    #endif
+
     // 蓝牙虚拟键盘指令推送
     #if BLE_KEYWORD
         if(strcmp(device_type,"Surface") == 0 && strcmp(device_operate,"Dail")==0) {
@@ -462,6 +512,8 @@ void InterfaceTask::updateHardware(int32_t num_positions, int32_t current_positi
                     case 2:  //双击
                         break;
                     case 3:  //长按
+                        log("Surface Dail Long Click.");
+                        log(buf_);
                         break;
                     default:
                         break;
@@ -534,54 +586,6 @@ void InterfaceTask::updateHardware(int32_t num_positions, int32_t current_positi
     // 主控配置信息查询
     #if GET_STATUS
         GetChipAndMemoryDetails();        
-    #endif
-
-    // LED颜色跟随控制
-    #if SK_LEDS
-        for (uint8_t i = 0; i < NUM_LEDS; i++) {
-            leds[i].setHSV(200 * press_value_unit, 255, brightness >> 8);
-
-            // Gamma adjustment
-            leds[i].r = dim8_video(leds[i].r);
-            leds[i].g = dim8_video(leds[i].g);
-            leds[i].b = dim8_video(leds[i].b);
-        }
-
-        // 根据旋转角度控制LED显示
-        if (num_positions == 0 && SK_LEDS == 1) {
-            int32_t light_up = 5;
-            float left_bound = PI / 2;
-            float raw_angle = left_bound - current_position * position_width_radians;
-
-            if (sinf(raw_angle) <= 1 && sinf(raw_angle) > 0.7 && cosf(raw_angle) >= 0 && cosf(raw_angle) < 0.7){
-                light_up = 5;
-                leds[light_up] = CRGB::Green;
-            } else if (sinf(raw_angle) <= 0.7 && sinf(raw_angle) > 0 && cosf(raw_angle) >= 0.7 && cosf(raw_angle) < 1){
-                light_up = 4;
-                leds[light_up] = CRGB::Green;
-            } else if (sinf(raw_angle) <= 0 && sinf(raw_angle) > -0.7 && cosf(raw_angle) <= 1 && cosf(raw_angle) > 0.7){
-                light_up = 3;
-                leds[light_up] = CRGB::Green;
-            } else if (sinf(raw_angle) <= -0.7 && sinf(raw_angle) > -1 && cosf(raw_angle) <= 0.7 && cosf(raw_angle) > 0){
-                light_up = 2;
-                leds[light_up] = CRGB::Green;
-            } else if (sinf(raw_angle) >= -1 && sinf(raw_angle) < -0.7 && cosf(raw_angle) <= 0 && cosf(raw_angle) > -0.7){
-                light_up = 1;
-                leds[light_up] = CRGB::Green;
-            } else if (sinf(raw_angle) >= -0.7 && sinf(raw_angle) < 0 && cosf(raw_angle) <= -0.7 && cosf(raw_angle) > -1){
-                light_up = 0;
-                leds[light_up] = CRGB::Green;
-            } else if (sinf(raw_angle) >= 0 && sinf(raw_angle) < 0.7 && cosf(raw_angle) >= -1 && cosf(raw_angle) < -0.7){
-                light_up = 7;
-                leds[light_up] = CRGB::Green;
-            } else if (sinf(raw_angle) >= 0.7 && sinf(raw_angle) < 1 && cosf(raw_angle) >= -0.7 && cosf(raw_angle) < 0){
-                light_up = 6;
-                leds[light_up] = CRGB::Green;
-            }
-        }
-
-        // 刷新LED颜色
-        FastLED.show();
     #endif
 }
 

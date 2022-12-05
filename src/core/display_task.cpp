@@ -87,7 +87,6 @@ void DisplayTask::run() {
 
         // 释放字库文件
         spr_.unloadFont();
-
         
         float left_bound = PI / 2;
         if (state.config.num_positions > 0) {
@@ -134,7 +133,6 @@ void DisplayTask::run() {
         }
 
         spr_.pushSprite(0, 0);
-
         {
           SemaphoreGuard lock(mutex_);
           ledcWrite(LEDC_CHANNEL_LCD_BACKLIGHT, brightness_);
